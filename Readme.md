@@ -47,9 +47,6 @@ https://hackernoon.com/learn-blockchains-by-building-one-117428612f46
 ## TODOS
 
 :pushpin:
-Add comments to code
-
-:pushpin:
 Creating wallet(Another repository)(for examine wallet transacitons go until the firs wallet created.We can understand if that block sender and receiver is our wallet and amount 0 it is the first transaction that belongs to our wallet)
 
 :pushpin:
