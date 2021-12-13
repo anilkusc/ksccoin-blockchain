@@ -11,6 +11,9 @@ import socket
 class Blockchain(object):
 
     def __init__(self):
+        
+        # get self address for node
+        self.address = socket.gethostbyname(socket.gethostname())
         # chain is array of blocks. It has index,timestamp,transactions,proof,previous_hash
         self.chain = []
         # it is all nodes in the network. When you change the network it would be changed also
@@ -22,8 +25,6 @@ class Blockchain(object):
         self.elections = []
         # Create genesis(first) block.
         self.new_block(previous_hash=0)
-        # get self address for node
-        self.address = socket.gethostbyname(socket.gethostname())
         # when elect state true all transaction are stopped and chain create new block.
         self.elect_state = False
         # election finishes when deadline occured
@@ -46,6 +47,7 @@ class Blockchain(object):
         self.transactions = []
         # add new empty block to chain
         self.chain.append(block)
+        self.new_transaction(sender=0,receiver=self.address,amount=1)
         return block
         
     # this function creates new transaction

@@ -1,4 +1,4 @@
-import json
+import copy
 from flask import Flask, jsonify, request
 from uuid import uuid4
 from blockchain import Blockchain
@@ -8,6 +8,10 @@ from threading import Thread
 #import _thread
 # Generate a globally unique address for this node
 node_identifier = str(uuid4()).replace('-', '')
+# How long node will be wait in elected state in second.(now+election_time_range)
+election_time_range = 3
+
+
 
 app = Flask(__name__)
 # create my chain
@@ -56,25 +60,19 @@ def new_transaction():
     if len(myblockchain.transactions) > 3:
         response = {'message': f'Transaction will be added to Block {index}. The transaction limit has been reached for this block. New Block will be created in short time.'}
         myblockchain.elect_state = True
-        myblockchain.election_deadline = round(time.time()) + 3
-        t = Thread(target = myblockchain.declare_leader_control )
-        t.start()
-        #t.join() 
-        #try:
-        #    _thread.start_new_thread( myblockchain.declare_leader_control )
-        #except:
-        #    print ("Error: unable to start thread: declare_leader_control")
-        #    print ("Exiting...")
-        #    exit(1)
-
+        myblockchain.election_deadline = round(time.time()) + election_time_range
+        Thread(target = myblockchain.declare_leader_control ).start()
     else:
         response = {'message': f'Transaction will be added to Block {index}.'}
     return jsonify(response), 201
 # get the all information of chains
 @app.route('/chain', methods=['GET'])
 def chain():
+    # because of showin transaction on the not sealed chain we need to copy myblockchain object, append 
+    mock_chain = copy.deepcopy(myblockchain)
+    mock_chain.new_block(previous_hash="not_sealed")
     response = {
-        "chain": myblockchain.chain,
+        "chain": mock_chain.chain,
         "length": len(myblockchain.chain)
     }
     return jsonify(response), 200
