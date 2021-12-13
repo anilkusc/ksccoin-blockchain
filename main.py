@@ -10,8 +10,8 @@ from threading import Thread
 node_identifier = str(uuid4()).replace('-', '')
 # How long node will be wait in elected state in second.(now+election_time_range)
 election_time_range = 3
-
-
+# Set transaction limit. It determines how mant transaction can be there in every chain
+transaction_limit = 10
 
 app = Flask(__name__)
 # create my chain
@@ -57,7 +57,7 @@ def new_transaction():
     # If record count is reach to 10 , all chain is stop transactions immediately,
     # they have synchronize all transactions and starte elections state.
     # After election on of the node would be elect for creating new block and transactions are continue.
-    if len(myblockchain.transactions) > 3:
+    if len(myblockchain.transactions) > transaction_limit:
         response = {'message': f'Transaction will be added to Block {index}. The transaction limit has been reached for this block. New Block will be created in short time.'}
         myblockchain.elect_state = True
         myblockchain.election_deadline = round(time.time()) + election_time_range
@@ -105,13 +105,15 @@ def resolve_conflicts():
             'chain': myblockchain.chain
         }
     return jsonify(response), 200
-
+# This functions is resposible for get votes from nodes. They are collected in a list and 
 @app.route('/election/vote', methods=['POST'])
 def election():
     values = request.get_json()
     code = 400
+    # if nodes are not in elect state, voting is not permitted.
     if round(time.time()) > myblockchain.election_deadline or myblockchain.elect_state == False:
         response = {'message': 'Election time has been finished:'}
+    # vote should be valid    
     elif values["node"] == None or values["vote"] == None:
         response = {'message': 'Vote is invalid'}
     elif values["node"] not in myblockchain.nodes:
@@ -123,6 +125,8 @@ def election():
         response = {'message': 'Vote is received.{values}'}
         code = 200
     return jsonify(response), code
+# This func. get transaction synchronization from other nodes.
+# TO-DO: transaction validation will be implemented
 @app.route('/sync/transaction', methods=['POST'])
 def sync_transaciton():
     values = request.get_json()
@@ -136,5 +140,6 @@ def sync_transaciton():
         response = {'message': 'Transaction appended'}
         code = 200
     return jsonify(response), code
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
