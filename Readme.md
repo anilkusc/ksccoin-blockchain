@@ -8,7 +8,7 @@ The ksccoin-* repostories purpose create a blockchain ecosystem from scratch.Thi
 :vertical_traffic_light:
 | URI | METHOD | BODY | RESPONSE | DESCRIPTION |
 | ----------- | --------------- | --------- | ----------- | ----------- |
-| /mine | GET | - | {"message": "","index": "","transactions": "","proof": "","previous_hash" : ""} | Mining means creating new block on the chain.Just request for mine and add a new block.
+| /mine | POST | {"leader": "<leader-ip>","receiver": "<receiver-ip>"} | {"message": "New Block Forged","index": 1,"transactions": "<transactions>","previous_hash" : "<hash>"} | Mining means creating new block on the chain.
 | /transactions/new | POST | {"sender": "<sender_hash>","receiver": "<receiver_hash>","amount": 100} | {'message': f'Transaction will be added to Block {index}'} | Creating new transaction means sending and receiving money in this block.
 | /chain | GET | - | {"chain": [{"index": 1,"previous_hash": 0,"proof": 100,"timestamp": <epoch_time>,"transactions": []},{"index": 2,"previous_hash": 35293,"proof": "<proof_hash>","timestamp": <epoch_time>,"transactions": [{"amount": 1,"receiver": "<receiver_address>","sender": 0}]}],"length": 2} | Get all chains and transaction informations.
 | /nodes/register | POST | {"nodes": ["http://<node_ip>:<port>","http://192.168.1.100:5000"]} | {"message": "","total_nodes": ["http://<node_ip>:<port>","http://192.168.1.100:500"]} | Register a node to blockchain network.

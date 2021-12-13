@@ -47,9 +47,10 @@ class Blockchain(object):
         # add new empty block to chain
         self.chain.append(block)
         return block
-
+        
     # this function creates new transaction
     def new_transaction(self,sender,receiver,amount):
+
         #add a new transaction to current block.
         self.transactions.append({
             # sender wallet code
@@ -59,11 +60,15 @@ class Blockchain(object):
             # amount
             "amount": amount,
         })
-        # return next blocks index
-        return self.last_block()['index'] + 1
-    # return last block of the blockchain
-    def last_block(self):
-        return self.chain[-1]
+        print("Transaction is going to be synchronized:"+str({"sender": sender, "receiver": receiver,"amount": amount }))
+        # sync with all nodes
+        for node in self.nodes:
+            sync_data = {"sender":sender,"receiver":receiver,"amount":amount}
+            r = requests.post("http://"+node+":5000/sync/transaction", data = sync_data ,timeout=1)
+            if r.status_code == 200:
+                print("Transaction has been synchronized with that node:"+node)
+        # return last block index(id) of the blockchain
+        return self.chain[-1]['index'] + 1
     # hash the all block
     def hash(self,block):
         block_string = json.dumps(block,sort_keys=True).encode()
@@ -109,7 +114,7 @@ class Blockchain(object):
         election_record = {"vote":vote,"node":self.address}
         # send every node to my vote
         for node in self.nodes:
-            r = requests.post("http://"+node+":5000/election/vote", data = election_record)
+            r = requests.post("http://"+node+":5000/election/vote", data = election_record,timeout=1)
             if r.status_code == 200:
                 print("Stream has been sent to node:"+node)
             else:
@@ -137,10 +142,17 @@ class Blockchain(object):
                 if self.address == self.leader_control():
                     for node in self.nodes:
                         mine_data = {"leader":self.address,"receiver":self.address}
-                        r = requests.post("http://"+node+":5000/mine", json = mine_data)
+                        r = requests.post("http://"+node+":5000/mine", json = mine_data,timeout=1)
                         if r.status_code == 200:
                             print("Stream has been sent to node:"+node)
                         else:
                             print("Stream could not sent to node:"+node)
                 print("The node is no more in elect state.")    
                 break
+
+    # this function synchronizes transactions of other nodes
+    def sync_transaction(self,sender,receiver,amount):
+        transaction = {"sender": sender,"receiver": receiver,"amount": amount}
+        self.transactions.append(transaction) if transaction not in self.transactions else self.transactions
+        print("Transaction is synchronized:"+str(transaction))
+        return True        

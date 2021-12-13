@@ -3,7 +3,9 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from blockchain import Blockchain
 import time
-import _thread
+from threading import Thread
+
+#import _thread
 # Generate a globally unique address for this node
 node_identifier = str(uuid4()).replace('-', '')
 
@@ -19,7 +21,7 @@ def mine():
     code = 200
     if values["leader"] == myblockchain.leader_control():
         # proof of working for mining
-        last_block = myblockchain.last_block()
+        last_block = myblockchain.chain[-1]['index'] + 1
         # hash the last block for consistency
         previous_hash = myblockchain.hash(last_block)
         # new block will be created and it will return the information of the new block.
@@ -55,10 +57,16 @@ def new_transaction():
         response = {'message': f'Transaction will be added to Block {index}. The transaction limit has been reached for this block. New Block will be created in short time.'}
         myblockchain.elect_state = True
         myblockchain.election_deadline = round(time.time()) + 3
-        try:
-            _thread.start_new_thread( myblockchain.declare_leader_control )
-        except:
-            print ("Error: unable to start thread: declare_leader_control")
+        t = Thread(target = myblockchain.declare_leader_control )
+        t.start()
+        #t.join() 
+        #try:
+        #    _thread.start_new_thread( myblockchain.declare_leader_control )
+        #except:
+        #    print ("Error: unable to start thread: declare_leader_control")
+        #    print ("Exiting...")
+        #    exit(1)
+
     else:
         response = {'message': f'Transaction will be added to Block {index}.'}
     return jsonify(response), 201
@@ -117,6 +125,18 @@ def election():
         response = {'message': 'Vote is received.{values}'}
         code = 200
     return jsonify(response), code
-
+@app.route('/sync/transaction', methods=['POST'])
+def sync_transaciton():
+    values = request.get_json()
+    code = 400
+    if myblockchain.elect_state == False:
+        response = {'message': 'The Node is in the election state:'}
+    elif values["sender"] == None or values["receiver"] == None or values["amount"] == None:
+        response = {'message': 'Transaction is invalid'}
+    else:
+        myblockchain.sync_transaction(sender=values["sender"],receiver=values["receiver"],amount=values["amount"])
+        response = {'message': 'Transaction appended'}
+        code = 200
+    return jsonify(response), code
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
